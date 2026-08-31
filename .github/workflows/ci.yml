@@ -111,6 +111,7 @@ jobs:
       - name: the tool has no runtime dependencies to install
         run: |
           set -euo pipefail
+          rm -rf node_modules
           npm ci --omit=dev
           installed=$(ls -A node_modules 2>/dev/null | grep -v '^\.' || true)
           if [ -n "$installed" ]; then
