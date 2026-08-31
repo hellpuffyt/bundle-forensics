@@ -1,0 +1,2 @@
+# One line ending everywhere: the dogfood job asserts exact CLI output.
+* text=auto eol=lf

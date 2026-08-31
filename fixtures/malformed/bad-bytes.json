@@ -1,0 +1,6 @@
+{
+  "inputs": {
+    "src/index.ts": { "bytes": "quite big", "imports": [] }
+  },
+  "outputs": {}
+}

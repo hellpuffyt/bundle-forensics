@@ -1,0 +1,6 @@
+{
+  "inputs": {
+    "src/index.ts": { "bytes": 10, "imports": { "path": "src/a.ts" } }
+  },
+  "outputs": {}
+}

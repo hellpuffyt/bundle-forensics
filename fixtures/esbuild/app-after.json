@@ -1,0 +1,105 @@
+{
+  "inputs": {
+    "src/index.ts": {
+      "bytes": 512,
+      "format": "esm",
+      "imports": [
+        { "path": "src/app.tsx", "kind": "import-statement", "original": "./app" },
+        { "path": "src/util/log.ts", "kind": "import-statement", "original": "./util/log" },
+        { "path": "node:fs", "kind": "import-statement", "external": true, "original": "node:fs" }
+      ]
+    },
+    "src/app.tsx": {
+      "bytes": 2100,
+      "format": "esm",
+      "imports": [
+        { "path": "node_modules/react/index.js", "kind": "import-statement", "original": "react" },
+        { "path": "src/components/Button.tsx", "kind": "import-statement", "original": "./components/Button" },
+        { "path": "src/util/log.ts", "kind": "import-statement", "original": "./util/log" }
+      ]
+    },
+    "src/components/Button.tsx": {
+      "bytes": 900,
+      "format": "esm",
+      "imports": [
+        { "path": "node_modules/react/index.js", "kind": "import-statement", "original": "react" },
+        { "path": "node_modules/classnames/index.js", "kind": "import-statement", "original": "classnames" }
+      ]
+    },
+    "src/util/log.ts": {
+      "bytes": 340,
+      "format": "esm",
+      "imports": [
+        { "path": "node_modules/date-fns/index.js", "kind": "import-statement", "original": "date-fns" }
+      ]
+    },
+    "src/worker.ts": {
+      "bytes": 400,
+      "format": "esm",
+      "imports": [
+        { "path": "src/util/log.ts", "kind": "import-statement", "original": "./util/log" }
+      ]
+    },
+    "node_modules/react/index.js": {
+      "bytes": 6000,
+      "format": "cjs",
+      "imports": [
+        { "path": "node_modules/react/cjs/react.production.min.js", "kind": "require-call", "original": "./cjs/react.production.min.js" }
+      ]
+    },
+    "node_modules/react/cjs/react.production.min.js": {
+      "bytes": 61000,
+      "format": "cjs",
+      "imports": [
+        { "path": "node_modules/object-assign/index.js", "kind": "require-call", "original": "object-assign" }
+      ]
+    },
+    "node_modules/object-assign/index.js": {
+      "bytes": 2000,
+      "format": "cjs",
+      "imports": []
+    },
+    "node_modules/classnames/index.js": {
+      "bytes": 1200,
+      "format": "cjs",
+      "imports": [
+        { "path": "node_modules/object-assign/index.js", "kind": "require-call", "original": "object-assign" }
+      ]
+    },
+    "node_modules/date-fns/index.js": {
+      "bytes": 9800,
+      "format": "esm",
+      "imports": []
+    }
+  },
+  "outputs": {
+    "dist/app.js": {
+      "bytes": 74020,
+      "entryPoint": "src/index.ts",
+      "imports": [],
+      "exports": [],
+      "inputs": {
+        "src/index.ts": { "bytesInOutput": 300 },
+        "src/app.tsx": { "bytesInOutput": 1600 },
+        "src/components/Button.tsx": { "bytesInOutput": 700 },
+        "src/util/log.ts": { "bytesInOutput": 220 },
+        "node_modules/react/index.js": { "bytesInOutput": 400 },
+        "node_modules/react/cjs/react.production.min.js": { "bytesInOutput": 59000 },
+        "node_modules/object-assign/index.js": { "bytesInOutput": 1800 },
+        "node_modules/classnames/index.js": { "bytesInOutput": 1000 },
+        "node_modules/date-fns/index.js": { "bytesInOutput": 9000 }
+      }
+    },
+    "dist/worker.js": {
+      "bytes": 9470,
+      "entryPoint": "src/worker.ts",
+      "imports": [],
+      "exports": [],
+      "inputs": {
+        "src/worker.ts": { "bytesInOutput": 250 },
+        "src/util/log.ts": { "bytesInOutput": 220 },
+        "node_modules/date-fns/index.js": { "bytesInOutput": 9000 }
+      }
+    }
+  }
+}

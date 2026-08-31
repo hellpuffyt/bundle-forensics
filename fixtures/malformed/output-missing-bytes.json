@@ -1,0 +1,6 @@
+{
+  "inputs": {},
+  "outputs": {
+    "dist/app.js": { "entryPoint": "src/index.ts", "inputs": {} }
+  }
+}

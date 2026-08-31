@@ -1,0 +1,119 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: test (node ${{ matrix.node-version }}, ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node-version: ["20", "22", "24"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+
+      - name: install
+        run: npm ci
+
+      - name: test
+        run: npm test
+
+      # The bin stub imports dist/, so building here is what proves the
+      # published entry point actually resolves on every platform.
+      - name: build and run the console script
+        run: npm run build && node bin/bundle-forensics.js summary fixtures/esbuild/app-before.json
+
+  quality:
+    name: types, lint and coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: install
+        run: npm ci
+
+      - name: tsc --noEmit (strict)
+        run: npm run typecheck
+
+      - name: eslint
+        run: npm run lint
+
+      # vitest.config.ts fails the run below 95% on any of the four metrics.
+      - name: coverage
+        run: npm run coverage
+
+  dogfood:
+    name: analyse a committed metafile with the built CLI
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: install and build
+        run: npm ci && npm run build
+
+      # Exercises the real console script end to end and pins its exact
+      # output, including the column alignment and the claim that
+      # deduplicating object-assign would save 1.8 kB.
+      - name: duplicates output is exactly as documented
+        run: |
+          set -euo pipefail
+          actual=$(node bin/bundle-forensics.js duplicates fixtures/esbuild/app-before.json | tr -d '\r')
+          expected=$'object-assign  3.7 kB in 2 copies, 1.8 kB recoverable\n\ninstall root                                          size  modules\n--------------------------------------------------  ------  -------\nnode_modules/classnames/node_modules/object-assign  1.9 kB        1\nnode_modules/object-assign                          1.8 kB        1'
+          if [ "$actual" != "$expected" ]; then
+            echo "unexpected output:"; echo "$actual"; exit 1
+          fi
+
+      # The size budget is the feature CI users will actually depend on,
+      # so both of its exit codes are asserted rather than assumed.
+      - name: --fail-on-growth exits 3 over budget and 0 under it
+        run: |
+          set -euo pipefail
+          set +e
+          node bin/bundle-forensics.js diff fixtures/esbuild/app-before.json \
+            fixtures/esbuild/app-after.json --fail-on-growth 1000 >/dev/null 2>&1
+          over=$?
+          node bin/bundle-forensics.js diff fixtures/esbuild/app-before.json \
+            fixtures/esbuild/app-after.json --fail-on-growth 20000 >/dev/null
+          under=$?
+          set -e
+          echo "over budget exit=$over, under budget exit=$under"
+          test "$over" = "3"
+          test "$under" = "0"
+
+      - name: the tool has no runtime dependencies to install
+        run: |
+          set -euo pipefail
+          npm ci --omit=dev
+          installed=$(ls -A node_modules 2>/dev/null | grep -v '^\.' || true)
+          if [ -n "$installed" ]; then
+            echo "expected an empty node_modules, found:"; echo "$installed"; exit 1
+          fi
+          node bin/bundle-forensics.js --version

@@ -1,0 +1,68 @@
+{
+  "inputs": {
+    "src/main.ts": {
+      "bytes": 100,
+      "format": "esm",
+      "imports": [
+        { "path": "src/a.ts", "kind": "import-statement", "original": "./a" },
+        { "path": "node_modules/@scope/ui/dist/index.js", "kind": "dynamic-import", "original": "@scope/ui" }
+      ]
+    },
+    "src/a.ts": {
+      "bytes": 200,
+      "format": "esm",
+      "imports": [{ "path": "src/b.ts", "kind": "import-statement", "original": "./b" }]
+    },
+    "src/b.ts": {
+      "bytes": 300,
+      "format": "esm",
+      "imports": [{ "path": "src/a.ts", "kind": "import-statement", "original": "./a" }]
+    },
+    "src/unused.ts": {
+      "bytes": 50,
+      "format": "esm",
+      "imports": []
+    },
+    "node_modules/@scope/ui/dist/index.js": {
+      "bytes": 5000,
+      "format": "esm",
+      "imports": [
+        { "path": "node_modules/@scope/ui/node_modules/tslib/tslib.js", "kind": "import-statement", "original": "tslib" }
+      ]
+    },
+    "node_modules/@scope/ui/node_modules/tslib/tslib.js": {
+      "bytes": 1000,
+      "format": "esm",
+      "imports": []
+    },
+    "node_modules/tslib/tslib.js": {
+      "bytes": 1000,
+      "format": "esm",
+      "imports": []
+    }
+  },
+  "outputs": {
+    "dist/main.js": {
+      "bytes": 6000,
+      "entryPoint": "src/main.ts",
+      "imports": [],
+      "exports": [],
+      "inputs": {
+        "src/main.ts": { "bytesInOutput": 80 },
+        "src/a.ts": { "bytesInOutput": 150 },
+        "src/b.ts": { "bytesInOutput": 250 },
+        "node_modules/@scope/ui/dist/index.js": { "bytesInOutput": 4000 },
+        "node_modules/@scope/ui/node_modules/tslib/tslib.js": { "bytesInOutput": 900 },
+        "node_modules/tslib/tslib.js": { "bytesInOutput": 620 }
+      }
+    },
+    "dist/chunk-SHARED.js": {
+      "bytes": 1000,
+      "imports": [],
+      "exports": [],
+      "inputs": {
+        "node_modules/tslib/tslib.js": { "bytesInOutput": 1000 }
+      }
+    }
+  }
+}
