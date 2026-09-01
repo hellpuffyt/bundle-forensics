@@ -108,13 +108,16 @@ jobs:
           test "$over" = "3"
           test "$under" = "0"
 
+      # `npm ci --omit=dev` turned out to be the wrong probe for this: on
+      # the runner it left the dev tree in place ("up to date" against the
+      # lockfile) and the emptiness assertion failed against devDependencies
+      # it was never meant to test. The honest form of the claim needs no
+      # npm at all: with node_modules deleted outright, the built CLI must
+      # run from its dist output and node builtins alone.
       - name: the tool has no runtime dependencies to install
         run: |
           set -euo pipefail
           rm -rf node_modules
-          npm ci --omit=dev
-          installed=$(ls -A node_modules 2>/dev/null | grep -v '^\.' || true)
-          if [ -n "$installed" ]; then
-            echo "expected an empty node_modules, found:"; echo "$installed"; exit 1
-          fi
+          node -e "const d = Object.keys(require('./package.json').dependencies || {}); if (d.length) { console.error('runtime dependencies declared:', d); process.exit(1); }"
           node bin/bundle-forensics.js --version
+          node bin/bundle-forensics.js duplicates fixtures/esbuild/app-before.json > /dev/null
