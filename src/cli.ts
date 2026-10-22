@@ -218,12 +218,41 @@ function summaryJson(bundle: Bundle, output: string | undefined): unknown {
   };
 }
 
+/** Rejects an `--output` that names no emitted file in any of the given builds. */
+function checkOutput(options: Options, ...bundles: readonly Bundle[]): void {
+  const output = options.output;
+  if (output === undefined) return;
+  if (bundles.some((bundle) => bundle.outputs.has(output))) return;
+  const known = new Set<string>();
+  for (const bundle of bundles) for (const name of bundle.outputs.keys()) known.add(name);
+  throw new QueryError(
+    `no output named ${JSON.stringify(output)} in ${bundles.map((b) => b.label).join(" or ")}`,
+    [...known].sort(),
+  );
+}
+
+/**
+ * Makes text safe to print to a terminal. Stats files are untrusted input
+ * (CI artefacts, files from colleagues), and a module path containing ESC
+ * or other control characters could otherwise rewrite the terminal — e.g.
+ * hide a regression line, or set the clipboard via OSC 52. Newlines and
+ * tabs produced by the renderers are kept; every other C0/C1 control
+ * character (and DEL) is shown as a visible \u escape.
+ */
+export function sanitizeForTerminal(text: string): string {
+  // eslint-disable-next-line no-control-regex -- matching control characters is the point
+  return text.replace(/[\u0000-\u0008\u000b-\u001f\u007f-\u009f]/g, (ch) =>
+    `\\u${ch.charCodeAt(0).toString(16).padStart(4, "0")}`,
+  );
+}
+
 async function runWhy(
   operands: readonly string[],
   options: Options,
   io: Io,
 ): Promise<void> {
   const bundle = await read(need(operands, 0, "a stats file"));
+  checkOutput(options, bundle);
   const query = need(operands, 1, "a module to explain");
   const matches = resolveModules(bundle, query).slice(0, limit(options));
   const contributions = contributionsByModule(bundle, options.output);
@@ -254,6 +283,9 @@ async function runDiff(
 ): Promise<number> {
   const before = await read(need(operands, 0, "a stats file for the older build"));
   const after = await read(need(operands, 1, "a stats file for the newer build"));
+  // An --output present in neither build used to diff 0 B against 0 B and
+  // pass any --fail-on-growth budget silently (e.g. a hashed chunk name).
+  checkOutput(options, before, after);
   const result = diffBundles(before, after, options.output);
   io.stdout(options.json ? json(result) : renderDiff(result, limit(options), options.detail));
 
@@ -277,12 +309,7 @@ async function dispatch(parsed: Parsed, io: Io): Promise<number> {
   }
 
   const bundle = await read(need(operands, 0, "a stats file"));
-  if (options.output !== undefined && !bundle.outputs.has(options.output)) {
-    throw new QueryError(
-      `no output named ${JSON.stringify(options.output)} in ${bundle.label}`,
-      [...bundle.outputs.keys()].sort(),
-    );
-  }
+  checkOutput(options, bundle);
   const total = totalBytes(bundle, options.output);
 
   switch (command) {
@@ -325,7 +352,15 @@ async function dispatch(parsed: Parsed, io: Io): Promise<number> {
  * the analysis is a bug in this tool, and disguising it as a user error
  * is how such bugs go unreported for a year.
  */
-export async function main(argv: readonly string[], io: Io): Promise<number> {
+export async function main(argv: readonly string[], rawIo: Io): Promise<number> {
+  const io: Io = {
+    stdout: (text) => {
+      rawIo.stdout(sanitizeForTerminal(text));
+    },
+    stderr: (text) => {
+      rawIo.stderr(sanitizeForTerminal(text));
+    },
+  };
   try {
     const parsed = parseCommandLine(argv);
     if (parsed.immediate !== undefined) {
