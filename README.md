@@ -4,8 +4,14 @@ Explain a JavaScript bundle from the stats file your bundler already
 emits: which import pulled a module in, which dependency is installed
 twice, and what actually changed between two builds.
 
+bundle-forensics is **not published to the npm registry** (nothing is
+published under that name). Install it from a clone:
+
 ```bash
-npm install -g bundle-forensics
+git clone https://github.com/hellpuffyt/bundle-forensics
+cd bundle-forensics
+npm ci && npm run build
+npm link            # puts `bundle-forensics` on your PATH
 ```
 
 ```bash
@@ -131,8 +137,14 @@ bad command line, `3` over the size budget.
 
 ```yaml
 - run: npx esbuild src/index.ts --bundle --minify --outdir=dist --metafile=after.json
-- run: npx bundle-forensics diff before.json after.json --fail-on-growth 10000
+- run: git clone --depth 1 https://github.com/hellpuffyt/bundle-forensics "$RUNNER_TEMP/bf"
+- run: cd "$RUNNER_TEMP/bf" && npm ci && npm run build
+- run: node "$RUNNER_TEMP/bf/bin/bundle-forensics.js" diff before.json after.json --fail-on-growth 10000
 ```
+
+`--output <file>` must name an output that exists in at least one of the
+two builds; a typo (or a content-hashed name that changed) is an error,
+not a silent `0 B` diff that passes the budget.
 
 That fails the build on a 10 kB regression *and* prints which package
 caused it, in the same output.
@@ -212,9 +224,19 @@ npm test            # vitest
 npm run coverage    # fails below 95%
 ```
 
-337 tests across ten files, all driven by the metafiles in `fixtures/`.
-Coverage is 100% of statements, lines and functions and 97.9% of
-branches.
+347 tests across eleven files, all driven by the metafiles in `fixtures/`
+(plus a few written to a temp directory at runtime). Coverage is 100% of
+statements, lines and functions and 98.0% of branches
+(`npm run coverage`, Node 24, macOS).
+
+## Security
+
+Stats files are treated as untrusted input: they are only parsed as JSON
+and validated structurally (every rejection names the key), nothing in them
+is executed or fetched, and every control character from them is escaped
+before it reaches your terminal (so a crafted module name cannot rewrite
+the output or emit terminal escape sequences). Please report
+vulnerabilities privately as described in [SECURITY.md](SECURITY.md).
 
 ## License
 

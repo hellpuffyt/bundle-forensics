@@ -4,6 +4,27 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- `diff --output <file>` with a name present in neither build compared
+  `0 B` to `0 B` and passed any `--fail-on-growth` budget; it is now an
+  error (exit 1) listing the real outputs. `why --output` is checked too.
+- The bin launcher is committed with its executable bit.
+
+### Security
+
+- Text and error output escape control characters coming from stats files
+  (ESC, CR, BEL, DEL, C1), so a crafted module path cannot inject terminal
+  escape sequences.
+- Dev dependencies updated with `npm audit fix`.
+
+### Documentation
+
+- The README no longer tells users to `npm install -g bundle-forensics`
+  or `npx bundle-forensics`: the package is not published to npm.
+
 ## [0.1.0] — 2026-08-31
 
 First release.
