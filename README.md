@@ -225,9 +225,9 @@ npm run coverage    # fails below 95%
 ```
 
 347 tests across eleven files, all driven by the metafiles in `fixtures/`
-(plus a few written to a temp directory at runtime). Coverage is 100% of
-statements, lines and functions and 98.0% of branches
-(`npm run coverage`, Node 24, macOS).
+(plus a few written to a temp directory at runtime). Coverage is 99.7% of
+statements, 99.8% of lines, 99.3% of functions and 96.8% of branches
+(`npm run coverage`, vitest 4, Node 24, macOS).
 
 ## Security
 

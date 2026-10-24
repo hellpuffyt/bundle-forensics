@@ -55,11 +55,11 @@
   "devDependencies": {
     "@eslint/js": "^9.13.0",
     "@types/node": "^20.16.0",
-    "@vitest/coverage-v8": "^3.2.7",
+    "@vitest/coverage-v8": "^4.1.12",
     "eslint": "^9.13.0",
     "typescript": "^5.6.3",
     "typescript-eslint": "^8.10.0",
-    "vitest": "^3.2.7"
+    "vitest": "^4.1.12"
   },
   "allowScripts": {
     "esbuild@0.28.2": true
