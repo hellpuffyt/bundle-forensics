@@ -4,6 +4,19 @@ Explain a JavaScript bundle from the stats file your bundler already
 emits: which import pulled a module in, which dependency is installed
 twice, and what actually changed between two builds.
 
+<img src="docs/assets/overview.svg" width="100%" alt="Data flow: an esbuild metafile or webpack stats file goes through load.ts and validate.ts, is converted by esbuild.ts or webpack.ts into one Bundle model, is analysed by graph.ts, packages.ts and diff.ts, and is printed by report.ts and cli.ts with exit codes 0 to 3">
+
+*Diagram of the source modules in `src/` and how a stats file flows through them.*
+
+## Requirements
+
+- Node.js 20 or newer (`engines`). CI runs Node 20, 22 and 24 on Linux,
+  Windows and macOS.
+- A stats file from your own build: esbuild (`--metafile`) or webpack
+  (`--json`). bundle-forensics does not run a bundler itself.
+
+## Install
+
 bundle-forensics is **not published to the npm registry** (nothing is
 published under that name). Install it from a clone:
 
@@ -14,6 +27,35 @@ npm ci && npm run build
 npm link            # puts `bundle-forensics` on your PATH
 ```
 
+Without `npm link`, run `node bin/bundle-forensics.js` from the clone.
+
+## Quick start
+
+Try it on the metafile committed in this repository:
+
+```
+$ bundle-forensics summary fixtures/esbuild/app-before.json
+fixtures/esbuild/app-before.json
+
+stats format                 esbuild
+outputs                            2
+modules                           12
+packages                           5
+duplicated packages                1
+total size                   69.5 kB
+first-party            3.1 kB (4.5%)
+dependencies         66.3 kB (95.5%)
+
+outputs
+
+output             size  modules  entry point
+--------------  -------  -------  -------------
+dist/app.js     67.7 kB       11  src/index.ts
+dist/worker.js   1.8 kB        3  src/worker.ts
+```
+
+On your own project:
+
 ```bash
 esbuild src/index.ts --bundle --minify --outdir=dist --metafile=meta.json
 bundle-forensics duplicates meta.json
@@ -23,11 +65,10 @@ bundle-forensics diff main.json branch.json --fail-on-growth 10000
 
 Zero runtime dependencies, `node:` builtins only.
 
-## Why this exists
+## What it answers
 
-A treemap tells you `react-dom` is 130 kB. You knew that. The three
-questions a bundle actually raises are harder, and all three are already
-answered inside the metafile:
+A treemap shows that `react-dom` is 130 kB. These three questions are
+harder, and the metafile already holds the answers:
 
 **"Why is this here at all?"** Something imported it, transitively, from
 an entry point. That is a shortest path in a graph the bundler wrote
@@ -43,14 +84,13 @@ node_modules/left-pad/index.js  (600 B in the bundle)
 ```
 
 The search is breadth-first, so the chain you get is the *shortest* one.
-A depth-first walk will cheerfully report a twelve-hop route through a
-barrel file when a two-hop one exists, which is how "why is this here"
-turns into an afternoon.
+A depth-first walk can report a twelve-hop route through a barrel file
+when a two-hop one exists.
 
 **"Am I shipping this twice?"** A resolved path records its own install
 location: `node_modules/classnames/node_modules/object-assign/index.js`
 is a private second copy of a package that also lives at the top level.
-No lockfile, no registry, no network — the path is the evidence:
+No lockfile, registry or network access is needed; the path is the evidence:
 
 ```
 $ bundle-forensics duplicates meta.json
@@ -92,7 +132,8 @@ duplicates resolved: object-assign
 ```
 
 Every output above is real: it is the tool run against
-[`fixtures/esbuild/`](fixtures/esbuild), and the first block is asserted
+[`fixtures/esbuild/`](fixtures/esbuild) (`app-before.json` as `main.json`,
+`app-after.json` as `branch.json`), and the `duplicates` block is asserted
 byte for byte by the `dogfood` job in CI.
 
 ## The number it reports
@@ -105,9 +146,8 @@ A module has two sizes and they are not the same number:
 
 Only the second one answers "why is my bundle this big", so it is what
 every command reports. In the fixture above `react.production.min.js`
-is 60,000 bytes of source and contributes 58,000 — and a module that is
-imported but fully tree-shaken contributes nothing at all, which is the
-whole point.
+is 60,000 bytes of source and contributes 58,000. A module that is
+imported but fully tree-shaken contributes nothing at all.
 
 ## Commands
 
@@ -142,12 +182,14 @@ bad command line, `3` over the size budget.
 - run: node "$RUNNER_TEMP/bf/bin/bundle-forensics.js" diff before.json after.json --fail-on-growth 10000
 ```
 
+That fails the build on a 10 kB regression *and* prints which package
+caused it, in the same output (over budget it also prints
+`bundle grew by 14.0 kB, over the 10.0 kB budget` for the fixture pair).
+Producing `before.json` from the base branch is up to your workflow.
+
 `--output <file>` must name an output that exists in at least one of the
 two builds; a typo (or a content-hashed name that changed) is an error,
 not a silent `0 B` diff that passes the budget.
-
-That fails the build on a 10 kB regression *and* prints which package
-caused it, in the same output.
 
 ## Supported stats files
 
@@ -186,8 +228,9 @@ bundle-forensics: inputs["src/index.ts"].bytes must be a non-negative number, fo
 ```
 
 Unknown import kinds and unfamiliar keys are tolerated rather than
-rejected — esbuild adds vocabulary in minor releases, and a stats reader
-that breaks on a bundler upgrade is worse than useless.
+rejected. esbuild adds vocabulary in minor releases, and a stats reader
+that broke on a bundler upgrade would fail for reasons unrelated to your
+bundle.
 
 ## As a library
 
@@ -214,6 +257,16 @@ in `src/` other than the CLI touches the filesystem. That is why the test
 suite runs against committed fixture metafiles and never invokes a
 bundler.
 
+## Limitations
+
+- Only esbuild metafiles and webpack stats JSON are read. Other bundlers'
+  stats formats (Rollup, Vite, Parcel) are not supported.
+- webpack numbers are pre-minification and concatenated modules are not
+  unpacked (see above).
+- Duplicate detection reads install paths only; it does not know package
+  versions, so "recoverable" assumes the copies could be deduplicated.
+- Not published to npm.
+
 ## Development
 
 ```bash
@@ -229,6 +282,8 @@ npm run coverage    # fails below 95%
 statements, 99.8% of lines, 99.3% of functions and 96.8% of branches
 (`npm run coverage`, vitest 4, Node 24, macOS).
 
+See [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.
+
 ## Security
 
 Stats files are treated as untrusted input: they are only parsed as JSON
@@ -240,4 +295,4 @@ vulnerabilities privately as described in [SECURITY.md](SECURITY.md).
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT. See [LICENSE](LICENSE).
