@@ -4,9 +4,58 @@ Explain a JavaScript bundle from the stats file your bundler already
 emits: which import pulled a module in, which dependency is installed
 twice, and what actually changed between two builds.
 
-<img src="docs/assets/overview.svg" width="100%" alt="Data flow: an esbuild metafile or webpack stats file goes through load.ts and validate.ts, is converted by esbuild.ts or webpack.ts into one Bundle model, is analysed by graph.ts, packages.ts and diff.ts, and is printed by report.ts and cli.ts with exit codes 0 to 3">
+## Demo
 
-*Diagram of the source modules in `src/` and how a stats file flows through them.*
+<img src="docs/screenshots/bundle-forensics-why-duplicates-diff.png" width="100%" alt="Terminal capture: why prints the import chain from src/index.ts to left-pad, duplicates lists two copies of object-assign, and diff with --fail-on-growth 10000 prints the per-package ledger, reports the bundle grew 14.0 kB over the 10.0 kB budget and exits 3">
+
+Terminal capture of a real run against the esbuild metafiles in [`fixtures/esbuild/`](fixtures/esbuild):
+`why`, `duplicates`, and a `diff` with a 10 kB growth budget that fails with exit code 3.
+
+<details>
+<summary>Same output as text</summary>
+
+```console
+$ bundle-forensics why fixtures/esbuild/app-before.json left-pad
+node_modules/left-pad/index.js  (600 B in the bundle)
+
+  from src/index.ts
+    -> src/app.tsx  [import-statement "./app"]
+      -> node_modules/left-pad/index.js  [import-statement "left-pad"]
+
+$ bundle-forensics duplicates fixtures/esbuild/app-before.json
+object-assign  3.7 kB in 2 copies, 1.8 kB recoverable
+
+install root                                          size  modules
+--------------------------------------------------  ------  -------
+node_modules/classnames/node_modules/object-assign  1.9 kB        1
+node_modules/object-assign                          1.8 kB        1
+
+$ bundle-forensics diff fixtures/esbuild/app-before.json fixtures/esbuild/app-after.json --fail-on-growth 10000
+fixtures/esbuild/app-before.json -> fixtures/esbuild/app-after.json
+
+before   69.5 kB
+after    83.5 kB
+delta   +14.0 kB
+
+packages
+
+name           change    before    after     delta
+-------------  -------  -------  -------  --------
+date-fns       added        0 B  18.0 kB  +18.0 kB
+tiny-date      removed   2.6 kB      0 B   -2.6 kB
+object-assign  shrank    3.7 kB   1.8 kB   -1.9 kB
+react          grew     58.4 kB  59.4 kB   +1.0 kB
+left-pad       removed    600 B      0 B    -600 B
+(first-party)  grew      3.1 kB   3.3 kB    +140 B
+
+duplicates resolved: object-assign
+bundle grew by 14.0 kB, over the 10.0 kB budget
+
+$ echo $?
+3
+```
+
+</details>
 
 ## Requirements
 
@@ -148,6 +197,12 @@ Only the second one answers "why is my bundle this big", so it is what
 every command reports. In the fixture above `react.production.min.js`
 is 60,000 bytes of source and contributes 58,000. A module that is
 imported but fully tree-shaken contributes nothing at all.
+
+## Source layout
+
+<img src="docs/assets/overview.svg" width="100%" alt="Data flow: an esbuild metafile or webpack stats file goes through load.ts and validate.ts, is converted by esbuild.ts or webpack.ts into one Bundle model, is analysed by graph.ts, packages.ts and diff.ts, and is printed by report.ts and cli.ts with exit codes 0 to 3">
+
+*Diagram (not a screenshot) of the source modules in `src/` and how a stats file flows through them.*
 
 ## Commands
 
