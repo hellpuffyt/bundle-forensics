@@ -1,0 +1,126 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="480" viewBox="0 0 1200 480" role="img" aria-labelledby="t d">
+  <title id="t">bundle-forensics data flow</title>
+  <desc id="d">A stats file (esbuild metafile or webpack stats JSON) is parsed and validated by load.ts and validate.ts, converted by esbuild.ts or webpack.ts into one Bundle model (model.ts), analysed by graph.ts (shortest import chain), packages.ts (packages and duplicate install roots) and diff.ts (two bundles compared), then rendered by report.ts or as JSON and printed by cli.ts with exit codes 0, 1, 2 and 3.</desc>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#A3AAA6"/>
+    </marker>
+    <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#3FBF8A"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="480" fill="#0C0D0D"/>
+
+  <g font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="11" fill="#A3AAA6" letter-spacing="1">
+    <text x="24" y="36">INPUT</text>
+    <text x="244" y="36">PARSE + VALIDATE</text>
+    <text x="474" y="36">FORMAT ADAPTERS</text>
+    <text x="714" y="36">MODEL</text>
+    <text x="944" y="36">ANALYSES</text>
+  </g>
+
+  <!-- column 1: inputs -->
+  <g>
+    <rect x="24" y="60" width="180" height="96" rx="8" fill="#17191A" stroke="#2A2E2D"/>
+    <text x="40" y="88" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="13" fill="#EEEAE2">meta.json</text>
+    <text x="40" y="110" font-family="-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#A3AAA6">esbuild --metafile</text>
+    <text x="40" y="130" font-family="-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#A3AAA6">inputs + outputs,</text>
+    <text x="40" y="146" font-family="-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#A3AAA6">bytesInOutput</text>
+
+    <rect x="24" y="180" width="180" height="96" rx="8" fill="#17191A" stroke="#2A2E2D"/>
+    <text x="40" y="208" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="13" fill="#EEEAE2">stats.json</text>
+    <text x="40" y="230" font-family="-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#A3AAA6">webpack --json</text>
+    <text x="40" y="250" font-family="-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#A3AAA6">modules[] + reasons,</text>
+    <text x="40" y="266" font-family="-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#A3AAA6">pre-minify sizes</text>
+  </g>
+
+  <!-- column 2: load + validate -->
+  <g>
+    <rect x="244" y="60" width="190" height="216" rx="8" fill="#17191A" stroke="#2A2E2D"/>
+    <text x="260" y="88" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="13" fill="#EEEAE2">load.ts</text>
+    <text x="260" y="108" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="11" fill="#A3AAA6">loadBundle(text)</text>
+    <text x="260" y="124" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="11" fill="#A3AAA6">detectFormat()</text>
+    <line x1="260" y1="144" x2="418" y2="144" stroke="#2A2E2D"/>
+    <text x="260" y="168" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="13" fill="#EEEAE2">validate.ts</text>
+    <text x="260" y="188" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="11" fill="#A3AAA6">parseJson, asBytes</text>
+    <text x="260" y="212" font-family="-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#A3AAA6">bad input throws a</text>
+    <text x="260" y="228" font-family="-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#A3AAA6">MetafileError that</text>
+    <text x="260" y="244" font-family="-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#A3AAA6">names the key</text>
+    <text x="260" y="264" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="11" fill="#A3AAA6">→ exit 1</text>
+  </g>
+
+  <!-- column 3: adapters -->
+  <g>
+    <rect x="474" y="60" width="200" height="96" rx="8" fill="#17191A" stroke="#2A2E2D"/>
+    <text x="490" y="88" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="13" fill="#EEEAE2">esbuild.ts</text>
+    <text x="490" y="108" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="11" fill="#A3AAA6">fromEsbuildMetafile</text>
+    <text x="490" y="130" font-family="-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#A3AAA6">real post-tree-shaking</text>
+    <text x="490" y="146" font-family="-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#A3AAA6">byte contributions</text>
+
+    <rect x="474" y="180" width="200" height="96" rx="8" fill="#17191A" stroke="#2A2E2D"/>
+    <text x="490" y="208" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="13" fill="#EEEAE2">webpack.ts</text>
+    <text x="490" y="228" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="11" fill="#A3AAA6">fromWebpackStats</text>
+    <text x="490" y="250" font-family="-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#A3AAA6">inverts reasons into</text>
+    <text x="490" y="266" font-family="-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#A3AAA6">forward import edges</text>
+  </g>
+
+  <!-- column 4: model -->
+  <g>
+    <rect x="714" y="60" width="190" height="216" rx="8" fill="#17191A" stroke="#3FBF8A"/>
+    <text x="730" y="88" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="13" fill="#EEEAE2">model.ts</text>
+    <text x="730" y="108" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="11" fill="#3FBF8A">Bundle</text>
+    <text x="730" y="134" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="11" fill="#A3AAA6">modules: Map</text>
+    <text x="746" y="152" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="11" fill="#A3AAA6">bytes, imports[]</text>
+    <text x="730" y="170" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="11" fill="#A3AAA6">outputs: Map</text>
+    <text x="746" y="188" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="11" fill="#A3AAA6">contributions</text>
+    <text x="730" y="212" font-family="-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#A3AAA6">one format-neutral</text>
+    <text x="730" y="228" font-family="-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#A3AAA6">model; pure, no</text>
+    <text x="730" y="244" font-family="-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#A3AAA6">filesystem access</text>
+  </g>
+
+  <!-- column 5: analyses -->
+  <g>
+    <rect x="944" y="60" width="232" height="64" rx="8" fill="#17191A" stroke="#2A2E2D"/>
+    <text x="960" y="84" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="13" fill="#EEEAE2">graph.ts</text>
+    <text x="960" y="104" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="11" fill="#A3AAA6">whyIncluded: BFS chain</text>
+    <text x="960" y="118" font-family="-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#A3AAA6">why</text>
+
+    <rect x="944" y="136" width="232" height="64" rx="8" fill="#17191A" stroke="#2A2E2D"/>
+    <text x="960" y="160" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="13" fill="#EEEAE2">packages.ts</text>
+    <text x="960" y="180" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="11" fill="#A3AAA6">findDuplicates by root</text>
+    <text x="960" y="194" font-family="-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#A3AAA6">packages · duplicates · summary</text>
+
+    <rect x="944" y="212" width="232" height="64" rx="8" fill="#17191A" stroke="#2A2E2D"/>
+    <text x="960" y="236" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="13" fill="#EEEAE2">diff.ts</text>
+    <text x="960" y="256" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="11" fill="#A3AAA6">diffBundles(before, after)</text>
+    <text x="960" y="270" font-family="-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#A3AAA6">diff --detail · --fail-on-growth</text>
+  </g>
+
+  <!-- arrows -->
+  <g stroke="#A3AAA6" stroke-width="1.5" fill="none" marker-end="url(#a)">
+    <path d="M204 108 H240"/>
+    <path d="M204 228 H240"/>
+    <path d="M434 108 H470"/>
+    <path d="M434 228 H470"/>
+    <path d="M674 108 H710"/>
+    <path d="M674 228 H710"/>
+    <path d="M904 92 H940"/>
+    <path d="M904 168 H940"/>
+    <path d="M904 244 H940"/>
+    <path d="M1060 276 V346"/>
+  </g>
+
+  <!-- bottom band: report + cli -->
+  <g>
+    <rect x="24" y="352" width="1152" height="104" rx="8" fill="#17191A" stroke="#2A2E2D"/>
+    <text x="40" y="380" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="13" fill="#EEEAE2">report.ts</text>
+    <text x="40" y="400" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="11" fill="#A3AAA6">renderSummary · renderWhy · renderDuplicates · renderDiff</text>
+    <text x="40" y="420" font-family="-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#A3AAA6">aligned text tables, or --json for scripts</text>
+
+    <line x1="520" y1="368" x2="520" y2="440" stroke="#2A2E2D"/>
+    <text x="540" y="380" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="13" fill="#EEEAE2">cli.ts</text>
+    <text x="540" y="400" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="11" fill="#A3AAA6">parseCommandLine · sanitizeForTerminal</text>
+    <text x="540" y="420" font-family="-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#A3AAA6">the only module that reads files; control characters escaped</text>
+    <text x="540" y="442" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="11" fill="#3FBF8A">exit 0 ok · 1 bad input/query · 2 bad command line · 3 over budget</text>
+  </g>
+</svg>
